@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -412,4 +413,22 @@ func GetMultipathDevices() (multipathDevices []*model.MultipathDeviceInfo, err e
 		}
 	}
 	return nil, fmt.Errorf("Invalid multipathd command output received")
+}
+
+func GetUnhealthyMultipathDevices(multipathDevices []*model.MultipathDeviceInfo) (unhealthyMultipathDevices []*model.MultipathDeviceInfo, err error) {
+	log.Tracef(">>>> GetUnhealthyMultipathDevices from the multipathDevices: %+v", multipathDevices)
+	defer log.Trace("<<<<< GetUnhealthyMultipathDevices")
+
+	if multipathDevices != nil && len(multipathDevices) > 0 {
+		for _, device := range multipathDevices {
+			log.Tracef("NAME:%s", device.Name, " Vendor:%s", device.Vendor, " Paths:", device.Paths, " Path Faults:", device.PathFaults, " UUID:", device.UUID)
+			if device.Paths < 1 && device.PathFaults > 0 && !slices.Contains(linux.DeviceVendorPatterns, device.Vendor) {
+				log.Warnf("Defective multipath device found: ", device.Name)
+				unhealthyMultipathDevices = append(unhealthyMultipathDevices, (*model.MultipathDeviceInfo)(device))
+			}
+		}
+		log.Tracef("Number of unhealthy multipath devices found are ", len(unhealthyMultipathDevices))
+		return unhealthyMultipathDevices, nil
+	}
+	return nil, fmt.Errorf("Multipath devices are either empty or invalid %+v", multipathDevices)
 }

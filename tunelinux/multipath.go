@@ -421,7 +421,7 @@ func GetUnhealthyMultipathDevices(multipathDevices []*model.MultipathDeviceInfo)
 	if multipathDevices != nil && len(multipathDevices) > 0 {
 		for _, device := range multipathDevices {
 			log.Tracef("NAME:%s", device.Name, " Vendor:%s", device.Vendor, " Paths:", device.Paths, " Path Faults:", device.PathFaults, " UUID:", device.UUID)
-			if device.Paths < 1 && device.PathFaults > 0 && !isSupportedDeviceVendor(linux.DeviceVendorPatterns, device.Vendor) {
+			if device.Paths < 1 && device.PathFaults > 0 && isSupportedDeviceVendor(linux.DeviceVendorPatterns, device.Vendor) {
 				log.Warnf("Defective multipath device found: ", device.Name)
 				unhealthyMultipathDevices = append(unhealthyMultipathDevices, (*model.MultipathDeviceInfo)(device))
 			}
